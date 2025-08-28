@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ePrint Interactive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+      transition: background-color 0.5s ease;
+    }
+
+     video#video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100vw;
+      min-height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: transparent;
+      display: none;
+      z-index: 2;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    video.hidden {
+  display: none;
+}
+
+body.overlay-active {
+  background-color:#2196F3; /* Blue background after video hides */
+}
+
+
+    #menu {
+      background:azure;
+      padding: 30px 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      max-width: 360px;
+      width: 90%;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    #menu h3 {
+      margin-top: 0;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .icon-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #4CAF50, #2E7D32);
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin: 12px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.3s ease;
+      min-width: 120px;
+    }
+
+    .icon-button:hover,
+    .icon-button:active {
+      transform: scale(1.05);
+      background: linear-gradient(135deg, #66BB6A, #388E3C);
+    }
+
+    .icon-button span {
+      margin-left: 8px;
+    }
+
+    #mailDisplay {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #444;
+      font-weight: bold;
+      display: none;
+    }
+
+    #nextBtn {
+      display: none;
+      margin-top: 20px;
+      background:#2E7D32;
+    }
+
+    #qrCode {
+      width: 150px;
+      margin: 15px auto;
+    }
+
+    .step {
+      display: none;
+      font-size: 18px;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+ #fabMenu {
+  position: fixed;
+  bottom: 20px;
+  right: 20px; /* 👈 move to right side */
+  z-index: 10;
+  align-items: flex-end; /* ensure options align right */
+}
+
+#fabMenu #mainFab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 24px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+#fabOptions {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+  align-items: flex-end;
+}
+
+#fabMenu.open #fabOptions {
+  display: flex;
+}
+
+#fabOptions button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 20px;
+  background-color: #ffffffee;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+#fabOptions button:hover {
+  background-color: #e3f2fd;
+}
+
+#printerInfoOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(72, 84, 96, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  overflow-y: auto;
+}
+
+#printerInfoOverlay .container {
+  background: whitesmoke;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  max-width: 400px;
+  width: 90%;
+  padding: 30px 40px;
+  animation: fadeIn 0.4s ease;
+}
+#stepDots {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  margin: 0 6px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+.dot.active {
+  background-color: #2196F3; /* Blue for active step */
+}
+.step-header-large {
+  background-color: #2196F3; /* Blue background */
+  color: white;
+  font-size: 32px;           /* Large font */
+  font-weight: 700;
+  padding: 40px 20px;        /* Taller padding for big header */
+  text-align: center;
+  border-radius: 20px 20px 0 0; /* Rounded top corners */
+  margin: -30px -40px 30px -40px; /* Pull header full width of the menu */
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.6); /* subtle shadow */
+}
+
+/* Ink bar styles */
+.bar-container {
+  background: #e0e0e0;
+  border-radius: 10px;
+  height: 20px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 0;
+  border-radius: 10px;
+  transition: width 2s ease-in-out;
+}
+
+.black { background: #333333; }
+.cyan { background: #00bcd4; }
+.magenta { background: #e91e63; }
+.yellow { background: #ffeb3b; }
+
+.label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #444;
+  display: flex;
+  justify-content: space-between;
+}
+
+.percentage {
+  font-weight: 600;
+}
+/* chatbot styles */
+#chatbox {
+  border: 1px solid black;
+  padding: 10px;
+  width: 350px;
+  height: 400px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  background: lightgray;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+#chatbox .message {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.4s ease forwards;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+#chatbox .user {
+  background-color: lightcyan;
+  text-align: right;
+}
+
+#chatbox .bot {
+  background-color: lightseagreen;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+  </style>
+</head>
+<body>
+
+<!-- Background video -->
+<video id="video" autoplay muted loop playsinline>
+  <source src="./bgvv.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<!-- Overlay menu -->
+<div id="overlay">
+  <div id="menu">
+    
+    <!-- Step 1 -->
+    <div id="step1" class="step">
+      
+      
+        <div id="optionsContainer">
+          <h2>Welcome to printing +</h2>
+          <h2>🖨️ e-Print</h2>
+          <h3>Choose Print Type</h3>
+        <button class="icon-button" onclick="selectPrintType('blackwhite')">Black & White</button>
+        <button class="icon-button" onclick="selectPrintType('colour')">Colour</button>
+      </div>
+      <div id="mailDisplay">Send files to mail Address:
+          📧  printingplus@gmail.com</div>
+      <button id="nextBtn" class="icon-button" onclick="goToStep2()">Continue</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="step2" class="step">
+      <h3>📱 Scan & Pay</h3>
+      <img id="qrCode" src="./Screenshot (470).png" alt="QR Code">
+      <p><strong>Amount:</strong> <span id="amount">₹0</span></p>
+      <div id="status"></div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="step3" class="step">
+      <h3>🖨️ Printing in Progress</h3>
+      <p>Your payment has been successfully received. Your files are being printed. Thank you!</p>
+    </div>
+    
+  <!-- step1, step2, step3 go here -->
+  
+  <!-- step dots go at the bottom -->
+  <div id="stepDots">
+    <span class="dot" id="dot1"></span>
+    <span class="dot" id="dot2"></span>
+    <span class="dot" id="dot3"></span>
+  
+</div>
+
+    <!-- Floating Action Button Menu -->
+
+</div> <!-- end #overlay -->
+
+<!-- Floating Action Button Menu -->
+<div id="fabMenu">
+  <button id="mainFab">➕</button>
+  <div id="fabOptions">
+    <button title="Chatbot">💬</button>
+    <button title="Info">❓</button>
+    </div>
+</div>
+<!-- Printer info -->
+      <div id="printerInfoOverlay" style="display: none;">
+  <div class="container">
+    <div class="basic-info">
+      <h2>Printer Details</h2>
+      <div class="info-item"><span class="info-label">Model No:</span><span class="info-value">XYYZ5800</span></div>
+      <div class="info-item"><span class="info-label">Connection:</span><span class="info-value">Wi-Fi</span></div>
+      <div class="info-item"><span class="info-label">Paper Tray:</span><span class="info-value">Loaded</span></div>
+      <div class="info-item"><span class="info-label">Status:</span><span class="info-value">Connected</span></div>
+      <div class="info-item"><span class="info-label">Maintenance:</span><span class="info-value">No issues</span></div>
+    </div>
+
+    <div class="ink-levels">
+      <h2>Ink Levels</h2>
+
+      <div class="ink-level">
+        <div class="label"><span>Black</span><span class="percentage" id="blackPercent">0%</span></div>
+        <div class="bar-container"><div class="bar black" id="blackBar"></div></div>
+      </div>
+
+      <div class="ink-level">
+        <div class="label"><span>Cyan</span><span class="percentage" id="cyanPercent">0%</span></div>
+        <div class="bar-container"><div class="bar cyan" id="cyanBar"></div></div>
+      </div>
+
+      <div class="ink-level">
+        <div class="label"><span>Magenta</span><span class="percentage" id="magentaPercent">0%</span></div>
+        <div class="bar-container"><div class="bar magenta" id="magentaBar"></div></div>
+      </div>
+
+      <div class="ink-level">
+        <div class="label"><span>Yellow</span><span class="percentage" id="yellowPercent">0%</span></div>
+        <div class="bar-container"><div class="bar yellow" id="yellowBar"></div></div>
+      </div>
+    </div>
+
+    <button onclick="closePrinterInfo()" style="margin-top: 20px; padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 8px;">Close</button>
+  </div>
+</div>
+
+      
+<!-- ✅ Chatbot Container -->
+<div id="chatbotContainer" style="display:none; position:fixed; bottom:80px; right:20px; z-index:9999; background:#fff; padding:15px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.2); width:370px;">
+
+  <!-- 🔴 Close Button -->
+  <div style="text-align: right; margin-bottom: 5px;">
+    <button id="closeChatbot" style="background: transparent; border: none; font-size: 18px; cursor: pointer;">✖️</button>
+  </div>
+
+  <div id="chatbox"></div>
+
+  <!-- Preset questions -->
+  <div id="presetQuestions" style="margin:10px 0;">
+    <button onclick="sendPreset('What are your prices?')">What are your prices?</button>
+    <button onclick="sendPreset('upload Error')">Upload Error</button>
+    <button onclick="sendPreset('pay error')">Pay Error</button>
+    <button onclick="sendPreset('print mismatch')">Print Mismatch</button>
+  </div>
+
+  <!-- Input area -->
+  <div style="display: flex; gap: 5px;">
+    <input type="text" id="userInput" placeholder="Type your message..." style="flex: 1;">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  
+<script>
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  const amountSpan = document.getElementById('amount');
+  const statusDiv = document.getElementById('status');
+  const mailDisplay = document.getElementById('mailDisplay');
+  const nextBtn = document.getElementById('nextBtn');
+  const optionsContainer = document.getElementById('optionsContainer');
+  const chatbox = document.getElementById('chatbox');
+  const mainFab = document.getElementById("mainFab");
+  const chatbotContainer = document.getElementById("chatbotContainer");
+  const fabMenu = document.getElementById("fabMenu");
+  const printerInfoOverlay = document.getElementById("printerInfoOverlay");
+
+  let resumeTimeout = null;
+  let paymentAmount = 0;
+  let hasInteracted = false;
+  let overlayVisible = false;
+
+function showOverlay() {
+  if (overlayVisible) return; // if overlay already shown, do nothing
+  overlayVisible = true;
+
+  overlay.style.display = 'flex';
+  showStep(step1);
+
+  document.body.classList.add('overlay-active');
+  video.pause();
+  video.classList.add('hidden');
+  
+  // Remove the automatic timeout hide
+   resumeTimeout = setTimeout(() => {
+    hideOverlay();
+   }, 9500);
+}
+
+  function hideOverlay() {
+    overlay.style.display = 'none';
+    document.body.classList.remove('overlay-active');
+    video.currentTime = 0;
+    video.play();
+    video.classList.remove('hidden');
+    clearTimeout(resumeTimeout);
+
+    mailDisplay.style.display = 'none';
+    nextBtn.style.display = 'none';
+    optionsContainer.style.display = 'block';
+    showStep(step1);
+     overlayVisible = false;
+  }
+
+  function showStep(stepElement) {
+  [step1, step2, step3].forEach(step => step.style.display = 'none');
+  stepElement.style.display = 'block';
+  statusDiv.textContent = '';
+
+  // Update dot highlights
+  document.querySelectorAll('.dot').forEach(dot => dot.classList.remove('active'));
+
+  if (stepElement === step1) document.getElementById('dot1').classList.add('active');
+  else if (stepElement === step2) document.getElementById('dot2').classList.add('active');
+  else if (stepElement === step3) document.getElementById('dot3').classList.add('active');
+}
+
+  function selectPrintType(type) {
+    clearTimeout(resumeTimeout);
+
+    if (type === 'blackwhite') {
+      paymentAmount = 10;
+    } else if (type === 'colour') {
+      paymentAmount = 15;
+    }
+
+    optionsContainer.style.display = 'none';
+    mailDisplay.style.display = 'block';
+    nextBtn.style.display = 'inline-block';
+  }
+
+  function goToStep2() {
+    clearTimeout(resumeTimeout);
+    amountSpan.textContent = `₹${paymentAmount}`;
+    showStep(step2);
+
+    setTimeout(() => {
+      statusDiv.textContent = 'Processing payment...';
+      setTimeout(() => {
+        statusDiv.textContent = '✅ Payment Successful!';
+        setTimeout(() => {
+          showStep(step3);
+          setTimeout(() => {
+            hideOverlay();
+          }, 10000);
+        }, 4000);
+      }, 3000);
+    }, 7000);
+  }
+
+  function botReply(message) {
+    message = message.toLowerCase();
+
+    if (message.includes('price')) return "Our prices start at ₹10 for B/W and ₹15 for Colour.";
+    if (message.includes('upload error')) return "You can upload files by emailing them to printingplus@gmail.com.";
+    if (message.includes('pay error') || message.includes('qr')) return "We apologize for the inconvenience. Payment will be refunded within 24 hours.";
+    if (message.includes('print mismatch') || message.includes('colour')) return "If there's a print mismatch, we will refund or reprint it for you.";
+    if (message.includes('hello') || message.includes('hi')) return "Hello! How can I assist you today?";
+    if (message.includes('bye')) return "Goodbye! Have a nice day.";
+    return "Sorry, I didn't understand that. Can you rephrase?";
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const message = input.value.trim();
+    if (!message) return;
+
+    appendMessage(message, "user");
+    const reply = botReply(message);
+    setTimeout(() => {
+      appendMessage(reply, "bot");
+    }, 500);
+    input.value = "";
+  }
+
+  function appendMessage(message, sender) {
+    const msg = document.createElement("div");
+    msg.classList.add("message", sender);
+    msg.textContent = message;
+    chatbox.appendChild(msg);
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  function sendPreset(presetMessage) {
+    appendMessage(presetMessage, "user");
+    const reply = botReply(presetMessage);
+    setTimeout(() => {
+      appendMessage(reply, "bot");
+    }, 400);
+  }
+
+  mainFab.addEventListener("click", () => {
+    fabMenu.classList.toggle("open");
+  });
+
+  const chatbotBtn = fabMenu.querySelector("button[title='Chatbot']");
+  chatbotBtn.addEventListener("click", () => {
+    chatbotContainer.style.display =
+      chatbotContainer.style.display === "none" ? "block" : "none";
+  });
+
+  document.getElementById("closeChatbot").addEventListener("click", () => {
+    chatbotContainer.style.display = "none";
+  });
+
+ document.body.addEventListener('click', showOverlay);
+document.body.addEventListener('touchstart', showOverlay);
+
+
+  const infoBtn = document.querySelector('#fabOptions button[title="Info"]');
+  infoBtn.addEventListener("click", () => {
+    printerInfoOverlay.style.display = "flex";
+    animateInkLevels();
+  });
+
+  function closePrinterInfo() {
+    printerInfoOverlay.style.display = "none";
+  }
+
+  function animateInkLevels() {
+    const inkLevels = {
+      black: 60,
+      cyan: 80,
+      magenta: 40,
+      yellow: 60
+    };
+
+    for (const color in inkLevels) {
+      const percent = inkLevels[color];
+      const bar = document.getElementById(color + "Bar");
+      const percentText = document.getElementById(color + "Percent");
+
+      bar.style.width = "0%";
+
+      setTimeout(() => {
+        bar.style.width = percent + "%";
+      }, 400);
+
+      let current = 0;
+      const step = Math.ceil(percent / 50);
+      const interval = setInterval(() => {
+        if (current >= percent) {
+          clearInterval(interval);
+          percentText.textContent = percent + "%";
+        } else {
+          current += step;
+          if (current > percent) current = percent;
+          percentText.textContent = current + "%";
+        }
+      }, 20);
+    }
+  }
+</script>
+
+
+</body>
+</html>
+>
